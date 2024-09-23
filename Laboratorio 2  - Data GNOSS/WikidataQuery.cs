@@ -81,10 +81,29 @@ namespace Laboratorio_2____Data_GNOSS
             try
             {
                 response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();  //Leemos el contenido
+                JObject obj = JObject.Parse(content); //Pareseamos el contenido a un JObject
+                JToken bindings = obj["results"]["bindings"];  //Accedemos a los bindings de la respuesta
+                Console.WriteLine(bindings.ToString());
+                if (bindings == null || bindings.First == null) //Si estos no tienen datos dejamos el valor por defecto "No especificado" 
+                {
+                    animal.add_numeroObrasEnPinacoteca(0);
+                    return;
+                }
+                else
+                {
+                    foreach (JToken bind in bindings) {//Aqui ya sabemos que al menos tiene un elemento por el condicional anterior 
+                        string total = bindings["obraLabel"]["value"].ToString();  //Obtenemos el valor del TOTAL de obras
+                        animal.add_numeroObrasEnPinacoteca(int.Parse(total)); //Lo parseamos a int y asignamos
+                    }
+                    
+                }
+
+
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"No se ha podido encontrar la consulta para {animal.Name} con ID {animal.GetWikidataId()}");
+                Console.WriteLine($"No se ha podido encontrar la consulta OBRAS para {animal.Name} con ID {animal.GetWikidataId()}");
                 Console.WriteLine(ex);
             }
             Console.WriteLine(await response.Content.ReadAsStringAsync());
@@ -125,11 +144,10 @@ namespace Laboratorio_2____Data_GNOSS
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"No se ha podido encontrar la consulta para {animal.Name} con ID {animal.GetWikidataId()}");
+                Console.WriteLine($"No se ha podido encontrar la consulta TOTAL para {animal.Name} con ID {animal.GetWikidataId()}");
                 Console.WriteLine(ex);
             }
             Console.WriteLine(await response.Content.ReadAsStringAsync());
-            Console.ReadLine();
 
         }
 
@@ -172,7 +190,7 @@ namespace Laboratorio_2____Data_GNOSS
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"No se ha podido encontrar la consulta para {animal.Name} con ID {animal.GetWikidataId()}");
+                Console.WriteLine($"No se ha podido encontrar la consulta SIGLO para {animal.Name} con ID {animal.GetWikidataId()}");
                 Console.WriteLine(ex);
             }
 
