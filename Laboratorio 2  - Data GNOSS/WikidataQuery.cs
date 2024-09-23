@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 using System.Reflection.Emit;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using RestSharp;
@@ -106,6 +107,21 @@ namespace Laboratorio_2____Data_GNOSS
             try
             {
                 response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();  //Leemos el contenido
+                JObject obj = JObject.Parse(content); //Pareseamos el contenido a un JObject
+                JToken bindings = obj["results"]["bindings"];  //Accedemos a los bindings de la respuesta
+                if (bindings == null || bindings.First == null) //Si estos no tienen datos dejamos el valor por defecto "No especificado" 
+                {
+                    animal.add_numeroObrasEnPinacoteca(0);
+                    return;
+                }
+                else
+                {
+                    bindings = bindings.First; //Aqui ya sabemos que al menos tiene un elemento por el condicional anterior 
+                    string total = bindings["TOTAL_OBRAS"]["value"].ToString();  //Obtenemos el valor del TOTAL de obras
+                    animal.add_numeroObrasEnPinacoteca(int.Parse(total)); //Lo parseamos a int y asignamos
+                }
+
             }
             catch (Exception ex)
             {
@@ -113,23 +129,23 @@ namespace Laboratorio_2____Data_GNOSS
                 Console.WriteLine(ex);
             }
             Console.WriteLine(await response.Content.ReadAsStringAsync());
-
+            Console.ReadLine();
 
         }
 
 
         public async Task GetSigloMasPopular(Animal animal)
         {
-            if (String.IsNullOrEmpty(animal.GetWikidataId())) { return; }
+            if (String.IsNullOrEmpty(animal.GetWikidataId()) ||animal.GetWikidataId().Equals("Link no especificado")) { return; }
             string query = "SELECT ?siglo (COUNT(DISTINCT ?obra) AS ?count) WHERE {"+
                 " ?obra wdt:P195 wd:Q160112."+   //Obras del Museo del Prado
-                "?obra wdt:P180 wd:"+animal.GetWikidataId()+".  "+ // Obras que representan al animal específico
-                "?obra wdt:P571 ?fecha. "+     //# Fecha de creación de la obra
-                "BIND(CEIL(YEAR(?fecha)/100) AS ?siglo) "+ //Calculamos el siglo al que pertenece
-                "SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],es,en\". } }"+ 
+                " ?obra wdt:P180 wd:"+ animal.GetWikidataId()+ ".  "+ // Obras que representan al animal específico
+                " ?obra wdt:P571 ?fecha. "+     //# Fecha de creación de la obra
+                " BIND(CEIL(YEAR(?fecha)/100) AS ?siglo) "+ //Calculamos el siglo al que pertenece
+                " SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],es,en\". } }"+ 
                 " GROUP BY ?siglo "+ //Agrupamos por siglo para hacer luego un count
                 " ORDER BY DESC(?count) "+ //Ordenamos por el count descendiente es decir, nos devolvera el mas popular el primero
-                "LIMIT 1"; //Tomamos solo el mas popular
+                " LIMIT 1"; //Tomamos solo el mas popular
 
             string requestUrl = "https://query.wikidata.org/sparql?query=" + query;
             var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
@@ -137,7 +153,22 @@ namespace Laboratorio_2____Data_GNOSS
             var response = await client.SendAsync(request);
             try
             {
-                response.EnsureSuccessStatusCode();
+                response.EnsureSuccessStatusCode(); //Verificamos que la respuesta tiene codigo de estado aceptado
+                var content = await response.Content.ReadAsStringAsync();  //Leemos el contenido
+                JObject obj = JObject.Parse(content); //Pareseamos el contenido a un JObject
+                JToken bindings = obj["results"]["bindings"];  //Accedemos a los bindings de la respuesta
+                string siglo = "No Especificado";
+                if (bindings == null || bindings.First == null) //Si estos no tienen datos dejamos el valor por defecto "No especificado" 
+                {
+                    animal.add_sigloDePopularidad(siglo);
+                    return;
+                }
+                else
+                {
+                    bindings = bindings.First; //Aqui ya sabemos que al menos tiene un elemento por el condicional anterior y por la consulta "LIMIT 1" sabemos que tiene como maximo uno, loo tomamos
+                    siglo = bindings["siglo"]["value"].ToString();  //Obtenemos el valor del siglo
+                    animal.add_sigloDePopularidad(ConvertirARomanos(int.Parse(siglo))); //Lo parseamos a numero romano y asignamos a animal mediante la funcion apropiada
+                }
             }
             catch (Exception ex)
             {
@@ -150,7 +181,20 @@ namespace Laboratorio_2____Data_GNOSS
 
         }
 
+        private static string ConvertirARomanos(int numero)
+        {
+            if (numero < 1 || numero > 100)
+                throw new ArgumentOutOfRangeException("El número debe estar entre 1 y 3999");
 
+            string[] decenas = { "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC" };
+            string[] unidades = { "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" };
+
+            // Dividimos el número en unidades, decenas, centenas y miles
+            string romano = decenas[(numero % 100) / 10] +
+                            unidades[numero % 10];
+
+            return romano;
+        }
 
 
 

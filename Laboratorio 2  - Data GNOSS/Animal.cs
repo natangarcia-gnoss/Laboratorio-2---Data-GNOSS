@@ -38,7 +38,7 @@ namespace Laboratorio_2____Data_GNOSS
         //Nombre de las obra del Museo del Prado en las que aparece ese animal
         public string ObrasRelacionadas { get; set; }
         //Obras en las que aparece el animal en la pinacoteca
-        public string ObrasPinacoteca { get; set; }
+        public int NumeroObrasEnPinacoteca { get; set; }
         //Siglo en el que ese animal ha sido más popular
         public string SigloDePopularidad { get; set; }
         // Constructor por defecto (Los valores que no admiten null se iniciaran a sus valores por defecto)
@@ -53,13 +53,13 @@ namespace Laboratorio_2____Data_GNOSS
             Interes = "Desconocido";
             LinkDbpedia = "Link no especificado";
             ObrasRelacionadas = "Ninguna obra relacionada";
-            ObrasPinacoteca = "Ninguna obra en la pinacoteca";
-            SigloDePopularidad = "No disponible";
+            NumeroObrasEnPinacoteca = 0;
+            SigloDePopularidad = "No Especificado";
 
         }
 
         // Constructor que inicializa todas las propiedades
-        public Animal(string name, string descripcion, string imagen, double velocidad, string linkWikidata, string nombreComun, string interes, string linkDbpedia, string obrasRelacionadas, string obrasPinacoteca, string sigloDepopularidad)
+        public Animal(string name, string descripcion, string imagen, double velocidad, string linkWikidata, string nombreComun, string interes, string linkDbpedia, string obrasRelacionadas, int numeroObrasEnPinacoteca, string sigloDepopularidad)
         {
             Name = name;    
             Descripcion = descripcion;
@@ -69,10 +69,9 @@ namespace Laboratorio_2____Data_GNOSS
             NombreComun = nombreComun;
             Interes = interes;
             LinkDbpedia = linkDbpedia;
-            ObrasRelacionadas = obrasRelacionadas;
-            ObrasPinacoteca = obrasPinacoteca;
-            SigloDePopularidad = sigloDepopularidad;
-
+            this.ObrasRelacionadas = obrasRelacionadas;
+            this.NumeroObrasEnPinacoteca = numeroObrasEnPinacoteca;
+            this.SigloDePopularidad = sigloDepopularidad;
         }
 
         // Método para mostrar la información del animal
@@ -86,7 +85,7 @@ namespace Laboratorio_2____Data_GNOSS
             Console.WriteLine($"Wikidata: {LinkWikidata}");
             Console.WriteLine($"DBpedia: {LinkDbpedia}");
             Console.WriteLine($"Obras Relacionadas: {ObrasRelacionadas}");
-            Console.WriteLine($"Obras Pinacoteca {ObrasPinacoteca}");
+            Console.WriteLine($"Numero de Obras en Pinacoteca {NumeroObrasEnPinacoteca}");
             Console.WriteLine($"Siglo de Popularidad: {SigloDePopularidad}");
         }
 
@@ -205,25 +204,33 @@ namespace Laboratorio_2____Data_GNOSS
 
 
         
-        // Verifica la propiedad "ObrasRelacionadas"
-        internal string add_obrasRelacionadas(string obrasRelacionadas)
+        // Verifica y añade la propiedad "ObrasRelacionadas"
+        internal void add_obrasRelacionadas(string obrasRelacionadas)
         {
-            // Implementación
-            return obrasRelacionadas;
+            if (String.IsNullOrEmpty(this.ObrasRelacionadas) || this.ObrasRelacionadas.Equals("No Especificado")) //Si e valor ya almacenado era nulo, vacio o por defecto, lo sustituimos por el nuevo
+            {
+                this.ObrasRelacionadas = obrasRelacionadas;
+            }
+            else //Si no, simplemente añadimos la nueva obra al final.
+            {
+                this.ObrasRelacionadas += "; " + obrasRelacionadas;
+            }
+
         }
 
         // Verifica la propiedad "ObrasPinacoteca"
-        internal string add_obrasPinacoteca(string obrasPinacoteca)
+        internal void add_numeroObrasEnPinacoteca(int numeroObrasEnPinacoteca)
         {
-            // Implementación
-            return obrasPinacoteca;
+            Console.WriteLine($"TOTAL DE OBRAS RECIBIDO {numeroObrasEnPinacoteca}");
+            this.NumeroObrasEnPinacoteca = numeroObrasEnPinacoteca;
         }
 
-        // Verifica la propiedad "SigloDePopularidad"
-        internal string add_sigloDePopularidad(string sigloDePopularidad)
+        // Verifica y asigna valor a la propiedad "SigloDePopularidad"
+        internal void add_sigloDePopularidad(string sigloDePopularidad)
         {
-            // Implementación
-            return sigloDePopularidad;
+            Console.WriteLine($"Dato recibido: {sigloDePopularidad}");
+            this.SigloDePopularidad = String.IsNullOrEmpty(sigloDePopularidad) ? "No Especificado" : sigloDePopularidad;
+
         }
 
 
