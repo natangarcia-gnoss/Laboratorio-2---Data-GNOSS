@@ -56,8 +56,10 @@ namespace Laboratorio_2_GNOSS
 
             foreach (Animal animal in animals.Values) {
 
-
+                wikidata.GetTotalObrasPorAnimal(animal).Wait();
+                wikidata.GetSigloMasPopular(animal).Wait();   
                 wikidata.GetObrasAnimal(animal).Wait();
+                
             }
 
 

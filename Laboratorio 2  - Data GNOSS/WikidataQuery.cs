@@ -10,14 +10,15 @@ namespace Laboratorio_2____Data_GNOSS
     internal class WikidataQuery
     {
         private const string WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql";
-        private readonly HttpClient _httpClient;
+        private readonly HttpClient client
+            ;
 
         public WikidataQuery()
         {
-            _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "WikidataQueryBot/1.0");
+            client = new HttpClient();
+            client.DefaultRequestHeaders.Add("User-Agent", "WikidataQueryBot/1.0");
         }
-
+        /*
         public async Task<JObject> ExecuteQueryAsync(string sparqlQuery)
         {
             var query = Uri.EscapeDataString(sparqlQuery);
@@ -29,7 +30,7 @@ namespace Laboratorio_2____Data_GNOSS
 
             return JObject.Parse(content);
         }
-
+        */
         public void ProcessResults(JObject results)
         {
             var bindings = results["results"]["bindings"];
@@ -46,13 +47,15 @@ namespace Laboratorio_2____Data_GNOSS
 
         public async Task GetObrasAnimal(Animal animal)
         {
+            if (String.IsNullOrEmpty(animal.GetWikidataId())) { return; }
+
             string query = "SELECT DISTINCT ?obra ?obraLabel WHERE { " +
                         "?obra wdt:P195 wd:Q160112; " +
                         "wdt:P180 wd:" + animal.GetWikidataId() + ". " +
                         "SERVICE wikibase:label { " +
                         "bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],es,en\". } " +
                         "}";
-
+            /*
             var options = new RestClientOptions("https://query.wikidata.org")
             {
                 MaxTimeout = -1,
@@ -65,26 +68,87 @@ namespace Laboratorio_2____Data_GNOSS
 
             Console.Read();
             
+            */
             
-            
-            /*
+           
 
             var requestUrl = $"https://query.wikidata.org/sparql?query={query}";
-
-            var client = new HttpClient();
             var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
             request.Headers.Add("Accept", "application/json");
 
             var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"No se ha podido encontrar la consulta para {animal.Name} con ID {animal.GetWikidataId()}");
+                Console.WriteLine(ex);
+            }
             Console.WriteLine(await response.Content.ReadAsStringAsync());
-            */
+            
+
+        }
+        public async Task GetTotalObrasPorAnimal(Animal animal) {
+            if (String.IsNullOrEmpty(animal.GetWikidataId())) { return; }
+            string query = "SELECT DISTINCT (COUNT(DISTINCT ?obra ) AS ?TOTAL_OBRAS) WHERE { "+ 
+                "?obra wdt:P195 wd:Q160112; "+
+                        "wdt:P180 wd:"+animal.GetWikidataId()+"; "+  
+                        "wdt:P31 wd:Q3305213. " +
+                        "SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],es,en\". } }";
+            
+
+            string requestUrl = "https://query.wikidata.org/sparql?query=" + query;
+            var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            request.Headers.Add("Accept", "application/json");
+            var response = await client.SendAsync(request);
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"No se ha podido encontrar la consulta para {animal.Name} con ID {animal.GetWikidataId()}");
+                Console.WriteLine(ex);
+            }
+            Console.WriteLine(await response.Content.ReadAsStringAsync());
+
 
         }
 
 
+        public async Task GetSigloMasPopular(Animal animal)
+        {
+            if (String.IsNullOrEmpty(animal.GetWikidataId())) { return; }
+            string query = "SELECT ?siglo (COUNT(DISTINCT ?obra) AS ?count) WHERE {"+
+                " ?obra wdt:P195 wd:Q160112."+   //Obras del Museo del Prado
+                "?obra wdt:P180 wd:"+animal.GetWikidataId()+".  "+ // Obras que representan al animal específico
+                "?obra wdt:P571 ?fecha. "+     //# Fecha de creación de la obra
+                "BIND(CEIL(YEAR(?fecha)/100) AS ?siglo) "+ //Calculamos el siglo al que pertenece
+                "SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],es,en\". } }"+ 
+                " GROUP BY ?siglo "+ //Agrupamos por siglo para hacer luego un count
+                " ORDER BY DESC(?count) "+ //Ordenamos por el count descendiente es decir, nos devolvera el mas popular el primero
+                "LIMIT 1"; //Tomamos solo el mas popular
+
+            string requestUrl = "https://query.wikidata.org/sparql?query=" + query;
+            var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            request.Headers.Add("Accept", "application/json");
+            var response = await client.SendAsync(request);
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"No se ha podido encontrar la consulta para {animal.Name} con ID {animal.GetWikidataId()}");
+                Console.WriteLine(ex);
+            }
+
+            Console.WriteLine(await response.Content.ReadAsStringAsync());
 
 
+        }
 
 
 
