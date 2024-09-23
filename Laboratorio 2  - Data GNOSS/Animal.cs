@@ -123,7 +123,10 @@ namespace Laboratorio_2____Data_GNOSS
         //Devolvemos el identificador de WIkidata (Parte del "Link Wikidata"
         public string GetWikidataId()
         {
-            return this.LinkWikidata.Split('/').Last();
+            if (String.IsNullOrEmpty(LinkWikidata)) return ""; 
+            string[] parts = this.LinkWikidata.Split('/');
+            Console.WriteLine(parts[parts.Length - 1]);
+            return parts[parts.Length - 1];
         }
         #region FuncionesDeVerificacion
 
