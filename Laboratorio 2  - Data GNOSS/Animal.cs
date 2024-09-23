@@ -204,7 +204,7 @@ namespace Laboratorio_2____Data_GNOSS
         #endregion FuncionesDeVerificacion
 
 
-
+        
         // Verifica la propiedad "ObrasRelacionadas"
         internal string add_obrasRelacionadas(string obrasRelacionadas)
         {
