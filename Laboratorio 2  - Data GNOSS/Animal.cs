@@ -10,6 +10,7 @@ namespace Laboratorio_2____Data_GNOSS
 {
     public class Animal
     {
+        internal static List<string> campos = new List<string>() { "descripción", "imagen", "velocidad", "link wikidata", "nombre común", "interés", "link dbpedia", "interés " };
 
         // Propiedades de la clase Animal
         public string Name { get; set; }
@@ -46,7 +47,7 @@ namespace Laboratorio_2____Data_GNOSS
 
             Name = name;
             Descripcion = "No hay descripción disponible";
-            Imagen = "URL por defecto de imagen";
+            Imagen = "";
             Velocidad = 0.0;
             LinkWikidata = "Link no especificado";
             NombreComun = "Nombre común no disponible";
@@ -91,6 +92,7 @@ namespace Laboratorio_2____Data_GNOSS
 
         public void AssingProperty(string property, string value)
         {
+            if (String.IsNullOrEmpty(value)) return;
             switch (property.Trim().ToLower())
             {
                 case "descripción":
@@ -122,16 +124,12 @@ namespace Laboratorio_2____Data_GNOSS
         //Devolvemos el identificador de WIkidata (Parte del "Link Wikidata"
         public string GetWikidataId()
         {
-            if (String.IsNullOrEmpty(LinkWikidata)) return ""; 
+            if (String.IsNullOrEmpty(LinkWikidata) || LinkWikidata.Equals("Link no especificado")) return ""; 
             string[] parts = this.LinkWikidata.Split('/');
-            Console.WriteLine(parts[parts.Length - 1]);
             return parts[parts.Length - 1];
         }
         #region FuncionesDeVerificacion
 
-
-
-       
         // Verifica la propiedad "Descripción"
         internal string check_descripcion(string descripcion)
         {
@@ -207,6 +205,7 @@ namespace Laboratorio_2____Data_GNOSS
         // Verifica y añade la propiedad "ObrasRelacionadas"
         internal void add_obrasRelacionadas(string obrasRelacionadas)
         {
+            Console.WriteLine("Obras Recibidas" + obrasRelacionadas);
             if (String.IsNullOrEmpty(this.ObrasRelacionadas) || this.ObrasRelacionadas.Equals("No Especificado")) //Si e valor ya almacenado era nulo, vacio o por defecto, lo sustituimos por el nuevo
             {
                 this.ObrasRelacionadas = obrasRelacionadas;
@@ -228,7 +227,7 @@ namespace Laboratorio_2____Data_GNOSS
         // Verifica y asigna valor a la propiedad "SigloDePopularidad"
         internal void add_sigloDePopularidad(string sigloDePopularidad)
         {
-            Console.WriteLine($"Dato recibido: {sigloDePopularidad}");
+            Console.WriteLine($"Dato SIGLO recibido: {sigloDePopularidad}");
             this.SigloDePopularidad = String.IsNullOrEmpty(sigloDePopularidad) ? "No Especificado" : sigloDePopularidad;
 
         }

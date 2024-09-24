@@ -14,7 +14,6 @@ namespace Laboratorio_2_GNOSS
 {
     internal class Program
     {
-        internal static List<string> campos = new List<string>() { "descripción", "imagen", "velocidad", "link wikidata", "nombre común", "interés", "link dbpedia", "interés " };
         static void Main()
         {
             // Ruta del archivo CSV
@@ -54,19 +53,14 @@ namespace Laboratorio_2_GNOSS
             }
             WikidataQuery wikidata = new WikidataQuery();
 
+            
             foreach (Animal animal in animals.Values) {
 
                 wikidata.GetTotalObrasPorAnimal(animal).Wait();
                 wikidata.GetSigloMasPopular(animal).Wait();   
-                wikidata.GetObrasAnimal(animal).Wait();
-                
+                wikidata.GetObrasAnimal(animal).Wait();              
             }
-
-
-
-
-
-
+            
 
 
             //Exportar los resultados obtenidos

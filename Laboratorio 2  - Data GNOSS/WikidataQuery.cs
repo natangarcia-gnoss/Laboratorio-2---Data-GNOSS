@@ -45,9 +45,64 @@ namespace Laboratorio_2____Data_GNOSS
             }
         }
 
+        public async Task GetPropertyFromWikiData(Animal animal, string propertyCode, string property)
+        {
+            Console.WriteLine($"CONSULTA {propertyCode} SOBRE {animal.Name} ID: {animal.GetWikidataId()}");
+            string id = animal.GetWikidataId();
+            if (!String.IsNullOrEmpty(id))
+            {
+                string space = "wd";
+                string query = "SELECT *" +
+                " WHERE {" +
+                "wd:" + id + " "+space+":" + propertyCode + " ?value. " +
+                "bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],es,en\". } " +
+                "}";
 
+
+                var requestUrl = $"https://query.wikidata.org/sparql?query={query}";
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                request.Headers.Add("Accept", "application/json");
+
+                var response = await client.SendAsync(request);
+                try
+                {
+                    response.EnsureSuccessStatusCode();
+                    var content = await response.Content.ReadAsStringAsync();  //Leemos el contenido
+                    JObject obj = JObject.Parse(content); //Pareseamos el contenido a un JObject
+                    JToken bindings = obj["results"]["bindings"];  //Accedemos a los bindings de la respuesta
+                    Console.WriteLine(bindings.ToString());
+                    if (bindings == null || bindings.First == null) //Si estos no tienen datos dejamos el valor por defecto "No especificado" 
+                    {
+                        
+                        Console.WriteLine("NO SE HA OBTENIDO RESULTADO");
+                        return;
+                    }
+                    else
+                    {
+                        string value = bindings[0]["value"]["value"].ToString();
+                        animal.AssingProperty(property, value);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"No se ha podido encontrar la consulta {propertyCode} para {animal.Name} con ID {animal.GetWikidataId()}");
+                    Console.WriteLine(ex);
+                }
+                Console.WriteLine(await response.Content.ReadAsStringAsync());
+            }
+            else{
+                Console.WriteLine($"No se ha podido obtener el link de {animal.Name} propiedad {property}");
+            }
+            
+
+
+
+
+
+        }
         public async Task GetObrasAnimal(Animal animal)
         {
+            Console.WriteLine($"CONSULTA OBRAS SOBRE {animal.Name} ID: {animal.GetWikidataId()}");
             if (String.IsNullOrEmpty(animal.GetWikidataId())) { return; }
 
             string query = "SELECT DISTINCT ?obra ?obraLabel WHERE { " +
@@ -56,20 +111,6 @@ namespace Laboratorio_2____Data_GNOSS
                         "SERVICE wikibase:label { " +
                         "bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],es,en\". } " +
                         "}";
-            /*
-            var options = new RestClientOptions("https://query.wikidata.org")
-            {
-                MaxTimeout = -1,
-            };
-            var client = new RestClient(options);
-            var request = new RestRequest(query, Method.Get);
-            request.AddHeader("Accept", "application/json");
-            RestResponse response = await client.ExecuteAsync(request);
-            Console.WriteLine(response.Content);
-
-            Console.Read();
-            
-            */
             
            
 
@@ -88,13 +129,17 @@ namespace Laboratorio_2____Data_GNOSS
                 if (bindings == null || bindings.First == null) //Si estos no tienen datos dejamos el valor por defecto "No especificado" 
                 {
                     animal.add_numeroObrasEnPinacoteca(0);
+                    Console.WriteLine("NO SE HA OBTENIDO RESULTADO");
                     return;
                 }
                 else
                 {
+                    int index = 0;
                     foreach (JToken bind in bindings) {//Aqui ya sabemos que al menos tiene un elemento por el condicional anterior 
-                        string total = bindings["obraLabel"]["value"].ToString();  //Obtenemos el valor del TOTAL de obras
-                        animal.add_numeroObrasEnPinacoteca(int.Parse(total)); //Lo parseamos a int y asignamos
+                        string obra = bindings[index]["obraLabel"]["value"].ToString();  //Obtenemos el valor del TOTAL de obras
+                        animal.add_obrasRelacionadas(obra); //Lo parseamos a int y asignamos
+                        Console.WriteLine($"Se ha resuelto la consulta OBRAS: {obra}");
+                        index++;
                     }
                     
                 }
@@ -111,11 +156,12 @@ namespace Laboratorio_2____Data_GNOSS
 
         }
         public async Task GetTotalObrasPorAnimal(Animal animal) {
+            Console.WriteLine($"CONSULTA TOTAL OBRAS SOBRE {animal.Name} ID: {animal.GetWikidataId()}");
             if (String.IsNullOrEmpty(animal.GetWikidataId())) { return; }
-            string query = "SELECT DISTINCT (COUNT(DISTINCT ?obra ) AS ?TOTAL_OBRAS) WHERE { "+ 
-                "?obra wdt:P195 wd:Q160112; "+
-                        "wdt:P180 wd:"+animal.GetWikidataId()+"; "+  
-                        "wdt:P31 wd:Q3305213. " +
+            string query = "SELECT DISTINCT (COUNT(DISTINCT ?obra ) AS ?TOTAL_OBRAS) WHERE { "+ //Contamos las instancias devueltas
+                           "?obra wdt:P195 wd:Q160112; "+ //Obras del prado
+                        "wdt:P180 wd:"+animal.GetWikidataId()+"; "+  //En las que este retratado el animal
+                        "wdt:P31 wd:Q3305213. " + //instancias de pinturas
                         "SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],es,en\". } }";
             
 
@@ -132,6 +178,7 @@ namespace Laboratorio_2____Data_GNOSS
                 if (bindings == null || bindings.First == null) //Si estos no tienen datos dejamos el valor por defecto "No especificado" 
                 {
                     animal.add_numeroObrasEnPinacoteca(0);
+                    Console.WriteLine("NO SE HA OBTENIDO RESULTADO");
                     return;
                 }
                 else
@@ -139,6 +186,7 @@ namespace Laboratorio_2____Data_GNOSS
                     bindings = bindings.First; //Aqui ya sabemos que al menos tiene un elemento por el condicional anterior 
                     string total = bindings["TOTAL_OBRAS"]["value"].ToString();  //Obtenemos el valor del TOTAL de obras
                     animal.add_numeroObrasEnPinacoteca(int.Parse(total)); //Lo parseamos a int y asignamos
+                    Console.WriteLine($"Se ha resuelto la consulta TOTAL: {total}");
                 }
 
             }
@@ -154,6 +202,7 @@ namespace Laboratorio_2____Data_GNOSS
 
         public async Task GetSigloMasPopular(Animal animal)
         {
+            Console.WriteLine($"CONSULTA SIGLO SOBRE {animal.Name} ID: {animal.GetWikidataId()}");
             if (String.IsNullOrEmpty(animal.GetWikidataId()) ||animal.GetWikidataId().Equals("Link no especificado")) { return; }
             string query = "SELECT ?siglo (COUNT(DISTINCT ?obra) AS ?count) WHERE {"+
                 " ?obra wdt:P195 wd:Q160112."+   //Obras del Museo del Prado
@@ -179,6 +228,7 @@ namespace Laboratorio_2____Data_GNOSS
                 if (bindings == null || bindings.First == null) //Si estos no tienen datos dejamos el valor por defecto "No especificado" 
                 {
                     animal.add_sigloDePopularidad(siglo);
+                    Console.WriteLine("NO SE HA OBTENIDO RESULTADO");   
                     return;
                 }
                 else
@@ -186,7 +236,9 @@ namespace Laboratorio_2____Data_GNOSS
                     bindings = bindings.First; //Aqui ya sabemos que al menos tiene un elemento por el condicional anterior y por la consulta "LIMIT 1" sabemos que tiene como maximo uno, loo tomamos
                     siglo = bindings["siglo"]["value"].ToString();  //Obtenemos el valor del siglo
                     animal.add_sigloDePopularidad(ConvertirARomanos(int.Parse(siglo))); //Lo parseamos a numero romano y asignamos a animal mediante la funcion apropiada
+                    Console.WriteLine($"Se ha resuelto la consulta SIGLO: {siglo}");
                 }
+
             }
             catch (Exception ex)
             {
@@ -201,6 +253,7 @@ namespace Laboratorio_2____Data_GNOSS
 
         private static string ConvertirARomanos(int numero)
         {
+
             if (numero < 1 || numero > 100)
                 throw new ArgumentOutOfRangeException("El número debe estar entre 1 y 3999");
 
